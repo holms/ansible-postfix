@@ -1,0 +1,89 @@
+---
+
+#### Postfix Configuration
+#
+# Sessions Policies
+#
+# smtpd_recipient_restrictions =
+#        reject_non_fqdn_recipient
+#        reject_unknown_recipient_domain
+#        reject_unauth_destination
+#        # Allow relaying for SASL authenticated clients and trusted hosts/networks
+#        # This can be put to smtpd_relay_restrictions in Postfix 2.10 and later
+#        permit_sasl_authenticated
+#        permit_mynetworks
+#        # Finally permit (relaying still requires SASL auth)
+#        permit
+- name: SMTPD | Session Policies | Recipient restrictions (RCPT TO related)
+  shell: postconf -e 'smtpd_recipient_restrictions = reject_unauth_destination permit_sasl_authenticated permit_mynetworks permit'
+  notify: restart postfix
+
+- name: SMTPD | Session Policies | Reject the request if the sender is the null address and there are multiple recipients
+  shell: postconf -e 'smtpd_data_restrictions = reject_multi_recipient_bounce'
+  notify: restart postfix
+
+- name: SMTPD | Session Policies | Sender restricitons
+  shell: postconf -e 'smtpd_sender_restrictions = '
+  notify: restart postfix
+
+- name: SMTPD | Session Policies | Deny VRFY recipient checks
+  shell: postconf -e 'disable_vrfy_command = yes'
+  notify: restart postfix
+
+- name: SMTPD | Session Policies | Require HELO
+  shell: postconf -e 'smtpd_helo_required = yes'
+  notify: restart postfix
+
+- name: SMTPD | Session Policies | Reject inseject instantly if a restriction applies (do not wait until RCPT TO)
+  shell: postconf -e 'smtpd_delay_reject = no'
+  notify: restart postfix
+
+# TLS
+#
+- name: SMTPD | TLS | Enable TLS (required to encrypt the plaintext SASL authentication)
+  shell: postconf -e 'smtpd_tls_security_level = may'
+  notify: restart postfix
+
+- name: SMTPD | TLS | Only offer SASL in a TLS session ("No" mean you can send mails from telnet)
+  shell: postconf -e 'smtpd_tls_auth_only = no'
+  notify: restart postfix
+
+- name: SMTPD | TLS | Certification Authority
+  shell: postconf -e 'smtpd_tls_CAfile = /etc/postfix/certs/mail-cacert.pem'
+  notify: restart postfix
+
+- name: SMTPD | TLS | Public Certificate
+  shell: postconf -e 'smtpd_tls_cert_file = /etc/postfix/certs/mail_public_cert.pem'
+  notify: restart postfix
+
+- name: SMTPD | TLS | Private Key (without passphrase)
+  shell: postconf -e 'smtpd_tls_key_file = /etc/postfix/certs/mail_private_key.pem'
+  notify: restart postfix
+
+- name: SMTPD | TLS | Randomizer for key creation
+  shell: postconf -e 'tls_random_source = dev:/dev/urandom'
+  notify: restart postfix
+
+- name: SMTPD | TLS | TLS related logging (set to 2 for debugging)
+  shell: postconf -e 'smtpd_tls_loglevel = 1'
+  notify: restart postfix
+
+- name: SMTPD | TLS | Activate TLS session Cache
+  shell: postconf -e 'smtpd_tls_session_cache_database = btree:/var/lib/postfix/smtpd_scache'
+  notify: restart postfix
+
+- name: SMTPD | TLS | Set TLS session timeout
+  shell: postconf -e 'smtpd_tls_session_cache_timeout = 3600s'
+  notify: restart postfix
+
+- name: SMTPD | TLS | Deny some TLS-Ciphers
+  shell: postconf -e 'smtpd_tls_exclude_ciphers = EXP EDH-RSA-DES-CBC-SHA ADH-DES-CBC-SHA DES-CBC-SHA SEED-SHA'
+  notify: restart postfix
+
+- name: SMTPD | TLS | Enable TLS headers
+  shell: postconf -e 'smtpd_tls_received_header = yes'
+  notify: restart postfix
+
+- name: SMTPD | TLS | Use STARTTLS annoucement
+  shell: postconf -e 'smtp_tls_note_starttls_offer = yes'
+  notify: restart postfix

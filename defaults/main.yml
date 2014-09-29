@@ -1,0 +1,5 @@
+postfix_full_domain: my.example.com
+postfix_domain: example.com
+postfix_local_domain: my
+
+postfix_smtp_banner: "{{ postfix_full_domain }} ESMTP Postfix Server"

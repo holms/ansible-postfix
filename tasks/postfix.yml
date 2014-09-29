@@ -1,0 +1,60 @@
+---
+# Used guideline: http://acidx.net/wordpress/2014/06/installing-a-mailserver-with-postfix-dovecot-sasl-ldap-roundcube/
+
+- name: Install Postfix
+  apt: >
+    pkg={{ item }}
+    state=latest
+    update_cache=yes
+  with_items:
+    - postfix
+    - mailutils
+  notify: restart postfix
+
+#- name: Copy postfix configuration
+#  template: src=main.cf.j2 dest=/etc/postfix/main.cf
+#  notify: restart postfix
+
+- name: Remove main.cf
+  file: path=/etc/postfix/main.cf state=absent
+
+- name: Touch main.cf
+  file: path=/etc/postfix/main.cf state=touch
+
+# Default Postfix configuration
+
+- name: Config | Default | Don't use biff service
+  shell: postconf -e 'biff=no'
+
+- name: Config | Default | Listen on all interfaces
+  shell: postconf -e 'inet_protocols = ipv4'
+
+- name: Config | Default | Use TCP IPv4
+  shell: postconf -e 'smtpd_banner = {{ postfix_smtp_banner }}'
+
+- name: Config | Default | Fully-qualified hostname
+  shell: postconf -e 'myhostname = {{ postfix_full_domain }}'
+
+- name: Config | Default | Do not append domain part to incomplete addresses (this is the MUA's job)
+  shell: postconf -e 'append_dot_mydomain = no'
+
+- name: Config | Default | Trusted networks/hosts (these are allowed to relay without authentication)
+  shell: postconf -e 'mynetworks = 127.0.0.0/8'
+
+# Local Transport Configuration
+
+- name: Config | Local Transport | Disable local transport (so that system accounts can't receive mail)
+  shell: postconf -e 'local_transport = error:Local Transport Disabled'
+
+- name:  Config | Local Transport | Don't use local alias maps
+  shell: postconf -e 'alias_maps = '
+
+- name: Config | Local Transport | Local domain (could be omitted, since it is automatically derived from myhostname)
+  shell: postconf -e 'mydomain = {{ postfix_domain }}'
+
+- name: Config | Local Transport | The domain name that locally-posted mail appears to come from, and that locally posted mail is delivered to
+  shell: postconf -e 'myorigin = $mydomain'
+
+- name: Config | Local Transport | Mails for these domains will be transported locally
+  shell: postconf -e 'mydestination = $myhostname, localhost.$mydomain, localhost'
+

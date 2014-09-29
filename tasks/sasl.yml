@@ -1,0 +1,56 @@
+---
+# Used guideline: http://xmodulo.com/enable-user-authentication-postfix-smtp-server-sasl.html
+
+- name: SASL | Install
+  apt: pkg={{ item }} state=present
+  with_items:
+      - libsasl2-2
+      - sasl2-bin
+
+- name: SASL | Create smtpd.conf
+  file: path=/etc/postfix/sasl/smtpd.conf state=touch
+
+- name: SASL | smtpd.conf | Set log level
+  lineinfile: "dest=/etc/postfix/sasl/smtpd.conf state=present line='log_level: 3'"
+  notify: restart postfix
+
+- name: SASL | smtpd.conf | Set pwcheck
+  lineinfile: "dest=/etc/postfix/sasl/smtpd.conf state=present line='pwcheck_method: saslauthd'"
+  notify: restart postfix
+
+- name: SASL | smtndp.conf | Set mech_list
+  lineinfile: "dest=/etc/postfix/sasl/smtpd.conf state=present line='mech_list:  PLAIN LOGIN'"
+  notify: restart postfix
+
+- name: SASL | Autostart | Create /etc/default/saslauthd
+  file: path=/etc/default/saslauthd state=touch
+
+- name: SASL | Autostart | Enable autostart
+  lineinfile: "dest=/etc/default/saslauthd state=present line='START=yes'"
+
+- name: SASL | Autostart | Set options
+  lineinfile: "dest=/etc/default/saslauthd state=present line='OPTONS=\"-c -m /var/spool/postfix/var/run/saslauthd\"'"
+
+- name: SASL | Postfix | Use dovecot for Sasl
+  shell: postconf -e 'smtpd_sasl_type = dovecot'
+  notify: restart postfix
+
+- name: SASL | Postfix | Socket path
+  shell: postconf -e 'smtpd_sasl_path = private/auth'
+  notify: restart postfix
+
+- name: SASL | Postfix | Set local Sasl domain
+  shell: postconf -e 'smtpd_sasl_local_domain = {{ postfix_domain }}'
+  notify: restart postfix
+
+- name: SASL | Postfix | Disable anononymous for Sasl
+  shell: postconf -e 'smtpd_sasl_security_options = noanonymous'
+  notify: restart postfix
+
+- name: SASL | Postfix | Legacy Sasl support
+  shell: postconf -e 'broken_sasl_auth_clients = yes'
+  notify: restart postfix
+
+- name: SASL | Postfix | Enable Sasl auth
+  shell: postconf -e 'smtpd_sasl_auth_enable = yes'
+  notify: restart postfix

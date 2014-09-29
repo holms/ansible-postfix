@@ -1,0 +1,50 @@
+---
+# Useg guideline: http://acidx.net/wordpress/2014/06/installing-a-mailserver-with-postfix-dovecot-sasl-ldap-roundcube/
+
+- name: Dovecot | Install
+  apt: pkg=dovecot-common state=present
+
+- name: Dovecot | Copy dovecot config
+  template: src=dovecot/10-master.conf.j2 dest=/etc/dovecot/conf.d/10-master.conf
+  notify: restart dovecot
+
+- name: Dovecot | Config | Set auth_mechanisms
+  lineinfile: "dest=/etc/dovecot/conf.d/10-auth.conf state=present line='auth_mechanisms = plain login'"
+  notify: restart dovecot
+
+- name: Dovecot | Config | Allo plain text authorization
+  lineinfile: "dest=/etc/dovecot/conf.d/10-auth.conf state=present insertafter='^disable_plaintext_auth' line='disable_plaintext_auth = no'"
+  notify: restart dovecot
+
+- name: Dovecot | Config | Enable syslog
+  lineinfile: "dest=/etc/dovecot/conf.d/10-logging.conf state=present insertafter='^#log_path = syslog' line='log_path = syslog'"
+  notify: restart dovecot
+
+- name: Dovecot | Config | Set syslog facility
+  lineinfile: "dest=/etc/dovecot/conf.d/10-logging.conf state=present insertafter='^#syslog_facility = mail' line='syslog_facility = mail'"
+  notify: restart dovecot
+
+- name: Dovecot | Config | Enable auth debug
+  lineinfile: "dest=/etc/dovecot/conf.d/10-logging.conf state=present insertafter='^#auth_debug = no' line='auth_debug = yes'"
+  notify: restart dovecot
+
+- name: Dovecot | Config | Set ssl cert public key path
+  lineinfile: "dest=/etc/dovecot/conf.d/10-ssl.conf state=present regexp='^ssl_cert' line='ssl_cert = </etc/dovecot/mail_public_cert.pem'"
+  notify: restart dovecot
+
+- name: Dovecot | Config | Set ssl cert private key path 
+  lineinfile: "dest=/etc/dovecot/conf.d/10-ssl.conf state=present regexp='^ssl_key' line='ssl_key = </etc/dovecot/private/mail_private_key.pem'"
+  notify: restart dovecot
+
+- name: Dovecot | Postfix | Set to use dovecot for virtual transport
+  shell: postconf -e 'virtual_transport=dovecot'
+  notify: restart postfix
+
+- name: Dovecot | Postfix | Enable Dovecot in master.cf
+  lineinfile: dest=/etc/postfix/master.cf line="dovecot   unix  -       n       n       -       -       pipe \n  flags=ODRhu user=postfix:postfix argv=/usr/lib/dovecot/deliver -e -f ${sender} -d ${recipient}"
+
+- name: Dovecot | Postfix | Set dovecot rcp limit
+  shell: postconf -e 'dovecot_destination_recipient_limit=1'
+  notify: restart postfix
+
+
