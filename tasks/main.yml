@@ -1,9 +1,4 @@
 ---
-- include: postfix.yml
-- include: dovecot.yml
-- include: smtpd.yml
-- include: sasl.yml
-
 # Add system users for default Dovecot authorization
 - user: name={{ item.name }} comment="Dovecot user" password={{ item.password }}
   with_items: postfix_users
@@ -15,10 +10,16 @@
   copy: dest=/etc/postfix/certs/mail-cacert.pem owner=postfix group=postfix content="/C=US/ST=Oregon/L=Portland/O=IT/CN=${ansible_fqdn}"
 
 - name: Create self-signed certificates
-  command: openssl req -new -nodes -x509 -subj "/C=US/ST=Oregon/L=Portland/O=IT/CN=${ansible_fqdn}" -days 3650 -keyout /etc/postfix/certs/mail_private_key.pem -out /etc/postfix/certs/mail_public_cert.pem -extensions v3_ca creates=/etc/postfix/certs/mail_private_cert.pem
+  command: openssl req -new -nodes -x509 -subj "/C=US/ST=Oregon/L=Portland/O=IT/CN=${ansible_fqdn}" -days 3650 -keyout /etc/postfix/certs/mail_key.pem -out /etc/postfix/certs/mail_cert.pem -extensions v3_ca creates=/etc/postfix/certs/mail_cert.pem
 
 - name: Set permission for self-signed certificates
   file: path=/etc/postfix/certs/{{ item }} state=touch owner=postfix group=postfix
   with_items:
     - mail_private_key.pem
     - mail_public_cert.pem
+
+- include: postfix.yml
+- include: dovecot.yml
+- include: smtpd.yml
+- include: sasl.yml
+
