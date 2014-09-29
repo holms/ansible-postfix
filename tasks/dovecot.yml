@@ -4,6 +4,21 @@
 - name: Dovecot | Install
   apt: pkg=dovecot-common state=present
 
+- name: Dovecot | Create certificates directory
+  file: path=/etc/dovecot/certs/ owner=dovecot group=dovecot state=directory
+
+- name: Dovecot | Create cacert file
+  copy: dest=/etc/dovecot/certs/mail-cacert.pem owner=dovecot group=dovecot content="/C=US/ST=Oregon/L=Portland/O=IT/CN=${ansible_fqdn}"
+
+- name: Dovecot | Create self-signed certificates
+  command: openssl req -new -nodes -x509 -subj "/C=US/ST=Oregon/L=Portland/O=IT/CN=${ansible_fqdn}" -days 3650 -keyout /etc/dovecot/certs/mail_key.pem -out /etc/dovecot/certs/mail_cert.pem -extensions v3_ca creates=/etc/dovecot/certs/mail_cert.pem
+
+- name: Dovecot |  Set permission for self-signed certificates
+  file: path=/etc/dovecot/certs/{{ item }} state=touch owner=dovecot group=dovecot
+  with_items:
+    - mail_key.pem
+    - mail_cert.pem
+
 - name: Dovecot | Copy dovecot config
   template: src=dovecot/10-master.conf.j2 dest=/etc/dovecot/conf.d/10-master.conf
   notify: restart dovecot
@@ -29,11 +44,11 @@
   notify: restart dovecot
 
 - name: Dovecot | Config | Set ssl cert public key path
-  lineinfile: "dest=/etc/dovecot/conf.d/10-ssl.conf state=present regexp='^ssl_cert' line='ssl_cert = </etc/dovecot/mail_public_cert.pem'"
+  lineinfile: "dest=/etc/dovecot/conf.d/10-ssl.conf state=present regexp='^ssl_cert' line='ssl_cert = </etc/dovecot/certs/mail_cert.pem'"
   notify: restart dovecot
 
 - name: Dovecot | Config | Set ssl cert private key path 
-  lineinfile: "dest=/etc/dovecot/conf.d/10-ssl.conf state=present regexp='^ssl_key' line='ssl_key = </etc/dovecot/private/mail_private_key.pem'"
+  lineinfile: "dest=/etc/dovecot/conf.d/10-ssl.conf state=present regexp='^ssl_key' line='ssl_key = </etc/dovecot/certs/mail_key.pem'"
   notify: restart dovecot
 
 - name: Dovecot | Postfix | Set to use dovecot for virtual transport
