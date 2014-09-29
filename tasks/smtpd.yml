@@ -48,16 +48,16 @@
   shell: postconf -e 'smtpd_tls_auth_only = no'
   notify: restart postfix
 
-- name: SMTPD | TLS | Certification Authority
-  shell: postconf -e 'smtpd_tls_CAfile = /etc/postfix/certs/mail-cacert.pem'
-  notify: restart postfix
+#- name: SMTPD | TLS | Certification Authority
+#  shell: postconf -e 'smtpd_tls_CAfile = /etc/postfix/certs/mail-cacert.pem'
+#  notify: restart postfix
 
 - name: SMTPD | TLS | Public Certificate
-  shell: postconf -e 'smtpd_tls_cert_file = /etc/postfix/certs/mail_public_cert.pem'
+  shell: postconf -e 'smtpd_tls_cert_file = /etc/postfix/certs/mail_cert.pem'
   notify: restart postfix
 
 - name: SMTPD | TLS | Private Key (without passphrase)
-  shell: postconf -e 'smtpd_tls_key_file = /etc/postfix/certs/mail_private_key.pem'
+  shell: postconf -e 'smtpd_tls_key_file = /etc/postfix/certs/mail_key.pem'
   notify: restart postfix
 
 - name: SMTPD | TLS | Randomizer for key creation
