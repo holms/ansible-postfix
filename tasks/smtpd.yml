@@ -14,16 +14,16 @@
 #        permit_mynetworks
 #        # Finally permit (relaying still requires SASL auth)
 #        permit
-- name: SMTPD | Session Policies | Recipient restrictions (RCPT TO related)
-  shell: postconf -e 'smtpd_recipient_restrictions = reject_unauth_destination permit_sasl_authenticated permit_mynetworks permit'
-  notify: restart postfix
-
 - name: SMTPD | Session Policies | Reject the request if the sender is the null address and there are multiple recipients
   shell: postconf -e 'smtpd_data_restrictions = reject_multi_recipient_bounce'
   notify: restart postfix
 
-- name: SMTPD | Session Policies | Sender restricitons
-  shell: postconf -e 'smtpd_sender_restrictions = '
+- name: SMTPD | Session Policies | Sender restrictions
+  shell: postconf -e 'smtpd_sender_restrictions = permit_mynetworks permit_sasl_authenticated permit_tls_clientcerts'
+  notify: restart postfix
+
+- name: SMTPD | Session Policies | Relay restrictions
+  shell: postconf -e 'smtpd_relay_restrictions = permit_mynetworks permit_sasl_authenticated reject_unauth_destination'
   notify: restart postfix
 
 - name: SMTPD | Session Policies | Deny VRFY recipient checks
