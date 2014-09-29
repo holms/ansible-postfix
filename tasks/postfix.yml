@@ -11,6 +11,7 @@
     - mailutils
   notify: restart postfix
 
+
 #- name: Copy postfix configuration
 #  template: src=main.cf.j2 dest=/etc/postfix/main.cf
 #  notify: restart postfix
@@ -25,36 +26,49 @@
 
 - name: Config | Default | Don't use biff service
   shell: postconf -e 'biff=no'
+  notify: restart postfix
 
 - name: Config | Default | Listen on all interfaces
   shell: postconf -e 'inet_protocols = ipv4'
+  notify: restart postfix
 
 - name: Config | Default | Use TCP IPv4
   shell: postconf -e 'smtpd_banner = {{ postfix_smtp_banner }}'
+  notify: restart postfix
 
 - name: Config | Default | Fully-qualified hostname
   shell: postconf -e 'myhostname = {{ postfix_full_domain }}'
+  notify: restart postfix
 
 - name: Config | Default | Do not append domain part to incomplete addresses (this is the MUA's job)
   shell: postconf -e 'append_dot_mydomain = no'
+  notify: restart postfix
 
 - name: Config | Default | Trusted networks/hosts (these are allowed to relay without authentication)
   shell: postconf -e 'mynetworks = 127.0.0.0/8'
+  notify: restart postfix
 
 # Local Transport Configuration
 
 - name: Config | Local Transport | Disable local transport (so that system accounts can't receive mail)
   shell: postconf -e 'local_transport = error:Local Transport Disabled'
+  notify: restart postfix
 
 - name:  Config | Local Transport | Don't use local alias maps
   shell: postconf -e 'alias_maps = '
+  notify: restart postfix
 
 - name: Config | Local Transport | Local domain (could be omitted, since it is automatically derived from myhostname)
   shell: postconf -e 'mydomain = {{ postfix_domain }}'
+  notify: restart postfix
 
 - name: Config | Local Transport | The domain name that locally-posted mail appears to come from, and that locally posted mail is delivered to
   shell: postconf -e 'myorigin = $mydomain'
+  notify: restart postfix
 
 - name: Config | Local Transport | Mails for these domains will be transported locally
   shell: postconf -e 'mydestination = $myhostname, localhost.$mydomain, localhost'
+  notify: restart postfix
 
+- name: Launch and start on boot
+  service: name=postfix state=started enabled=yes
