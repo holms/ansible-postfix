@@ -47,4 +47,6 @@
   shell: postconf -e 'dovecot_destination_recipient_limit=1'
   notify: restart postfix
 
+- name: Dovecot | Launch and start on boot
+  service: name=dovecot state=started enabled=yes
 
