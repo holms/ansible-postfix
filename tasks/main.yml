@@ -1,11 +1,14 @@
 ---
 # Add system users for default Dovecot authorization
-- user: name={{ item.name }} comment="Dovecot user" password={{ item.password }}
-  with_items: postfix_users
+- name: "Create dovecot user {{ item.key }}"
+  user:
+    name: "{{ item.key }}"
+    comment: "Dovecot user"
+    password: "{{ item.value.password | password_hash('sha512', item.value.mysecretsalt) }}"
+  with_dict: "{{ postfix_users }}"
 
 
 - include: postfix.yml
 - include: dovecot.yml
 - include: smtpd.yml
 - include: sasl.yml
-
