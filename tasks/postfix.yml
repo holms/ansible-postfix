@@ -2,10 +2,10 @@
 # Used guideline: http://acidx.net/wordpress/2014/06/installing-a-mailserver-with-postfix-dovecot-sasl-ldap-roundcube/
 
 - name: Install Postfix
-  apt: >
-    pkg={{ item }}
-    state=latest
-    update_cache=yes
+  apt:
+    pkg: ['postfix', 'mailutils']
+    state: latest
+    update_cache: yes
   with_items:
     - postfix
     - mailutils
@@ -29,6 +29,10 @@
 #- name: Copy postfix configuration
 #  template: src=main.cf.j2 dest=/etc/postfix/main.cf
 #  notify: restart postfix
+
+- name: Copy postfix master configuration
+  template: src=master.cf.j2 dest=/etc/postfix/master.cf
+  notify: restart postfix
 
 - name: Remove main.cf
   file: path=/etc/postfix/main.cf state=absent
